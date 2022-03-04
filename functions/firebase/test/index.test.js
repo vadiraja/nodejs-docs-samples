@@ -14,8 +14,8 @@
 
 'use strict';
 
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
+const proxyquire = require('proxyquire').noCallThru();
 const assert = require('assert');
 
 const getSample = () => {
@@ -87,13 +87,15 @@ describe('functions_firebase_firestore', () => {
       bar: 'baz',
     };
     const event = {
-      resource: 'resource',
-      eventType: 'type',
       oldValue: oldValue,
       value: value,
     };
+    const context = {
+      resource: 'resource',
+      eventType: 'type',
+    };
 
-    sample.program.helloFirestore(event);
+    sample.program.helloFirestore(event, context);
 
     assert.strictEqual(
       console.log.calledWith('Function triggered by event on: resource'),

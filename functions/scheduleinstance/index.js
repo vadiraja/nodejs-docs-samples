@@ -15,7 +15,18 @@
 // [START functions_start_instance_pubsub]
 // [START functions_stop_instance_pubsub]
 const compute = require('@google-cloud/compute');
-const instancesClient = new compute.InstancesClient({fallback: 'rest'});
+const instancesClient = new compute.InstancesClient();
+const operationsClient = new compute.ZoneOperationsClient();
+
+async function waitForOperation(projectId, operation) {
+  while (operation.status !== 'DONE') {
+    [operation] = await operationsClient.wait({
+      operation: operation.name,
+      project: projectId,
+      zone: operation.zone.split('/').pop(),
+    });
+  }
+}
 // [END functions_stop_instance_pubsub]
 
 /**
@@ -42,17 +53,17 @@ exports.startInstancePubSub = async (event, context, callback) => {
 
     const [instances] = await instancesClient.list(options);
 
-    if (instances.items) {
-      await Promise.all(
-        instances.items.map(async instance => {
-          return instancesClient.start({
-            project,
-            zone: payload.zone,
-            instance: instance.name,
-          });
-        })
-      );
-    }
+    await Promise.all(
+      instances.map(async instance => {
+        const [response] = await instancesClient.start({
+          project,
+          zone: payload.zone,
+          instance: instance.name,
+        });
+
+        return waitForOperation(project, response.latestResponse);
+      })
+    );
 
     // Operation complete. Instance successfully started.
     const message = 'Successfully started instance(s)';
@@ -89,17 +100,17 @@ exports.stopInstancePubSub = async (event, context, callback) => {
 
     const [instances] = await instancesClient.list(options);
 
-    if (instances.items) {
-      await Promise.all(
-        instances.items.map(async instance => {
-          return instancesClient.stop({
-            project,
-            zone: payload.zone,
-            instance: instance.name,
-          });
-        })
-      );
-    }
+    await Promise.all(
+      instances.map(async instance => {
+        const [response] = await instancesClient.stop({
+          project,
+          zone: payload.zone,
+          instance: instance.name,
+        });
+
+        return waitForOperation(project, response.latestResponse);
+      })
+    );
 
     // Operation complete. Instance successfully stopped.
     const message = 'Successfully stopped instance(s)';
