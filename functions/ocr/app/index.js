@@ -24,7 +24,9 @@ const storage = new Storage();
 
 // Get a reference to the Cloud Vision API component
 const Vision = require('@google-cloud/vision');
-const vision = new Vision.ImageAnnotatorClient();
+const vision = new Vision.ImageAnnotatorClient({
+  clientOptions:{}
+});
 
 // Get a reference to the Translate API component
 const {Translate} = require('@google-cloud/translate').v2;
